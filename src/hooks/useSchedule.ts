@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ScheduleData, ScheduleBlock, ScheduleListData } from '../types/schedule';
 import { saveToStorage, loadFromStorage } from '../utils/storage';
+import { fetchFromGitHub, saveToGitHub, isGitHubConfigured } from '../utils/github';
 import { generateId } from '../utils/time';
 import { COLOR_KEYS, TIME_START, TIME_END } from '../config/constants';
 
@@ -94,6 +95,7 @@ export function useSchedule() {
   const [currentScheduleId, setCurrentScheduleId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
 
   // 현재 선택된 시간표
   const currentSchedule = currentScheduleId
@@ -102,36 +104,73 @@ export function useSchedule() {
 
   // 초기 로드
   useEffect(() => {
-    setIsLoading(true);
-    const savedData = loadFromStorage();
+    const loadData = async () => {
+      setIsLoading(true);
 
-    if (savedData) {
-      // 기존 단일 시간표 데이터를 새 형식으로 마이그레이션
-      if ('blocks' in savedData && !('schedules' in savedData)) {
-        const oldData = savedData as { blocks: ScheduleBlock[]; title: string };
-        const migratedSchedule: ScheduleData = {
-          id: generateId(),
-          title: oldData.title || '시간표',
-          blocks: oldData.blocks || [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        const newListData: ScheduleListData = {
-          schedules: [migratedSchedule],
-        };
-        setListData(newListData);
-        saveToStorage(newListData);
-      } else if ('schedules' in savedData) {
-        setListData(savedData as ScheduleListData);
+      // GitHub에서 먼저 시도
+      if (isGitHubConfigured()) {
+        setSyncStatus('syncing');
+        const githubData = await fetchFromGitHub();
+        if (githubData) {
+          setListData(githubData);
+          saveToStorage(githubData); // 로컬에도 캐시
+          setSyncStatus('success');
+          setIsLoading(false);
+          return;
+        }
+        setSyncStatus('error');
       }
-    }
 
-    setIsLoading(false);
+      // GitHub 실패 또는 미설정 시 로컬 스토리지 사용
+      const savedData = loadFromStorage();
+      let localData: ScheduleListData | null = null;
+
+      if (savedData) {
+        // 기존 단일 시간표 데이터를 새 형식으로 마이그레이션
+        if ('blocks' in savedData && !('schedules' in savedData)) {
+          const oldData = savedData as { blocks: ScheduleBlock[]; title: string };
+          const migratedSchedule: ScheduleData = {
+            id: generateId(),
+            title: oldData.title || '시간표',
+            blocks: oldData.blocks || [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          localData = {
+            schedules: [migratedSchedule],
+          };
+          setListData(localData);
+          saveToStorage(localData);
+        } else if ('schedules' in savedData) {
+          localData = savedData as ScheduleListData;
+          setListData(localData);
+        }
+
+        // 로컬 데이터가 있고 GitHub이 설정되어 있으면 업로드
+        if (localData && isGitHubConfigured()) {
+          setSyncStatus('syncing');
+          const success = await saveToGitHub(localData);
+          setSyncStatus(success ? 'success' : 'error');
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
   }, []);
 
   // 저장
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
     saveToStorage(listData);
+
+    // GitHub 동기화
+    if (isGitHubConfigured()) {
+      setSyncStatus('syncing');
+      const success = await saveToGitHub(listData);
+      setSyncStatus(success ? 'success' : 'error');
+    }
+
     setHasChanges(false);
   }, [listData]);
 
@@ -328,6 +367,7 @@ export function useSchedule() {
     // 현재 시간표 관련
     hasChanges,
     isLoading,
+    syncStatus,
     setTitle,
     addBlock,
     updateBlock,

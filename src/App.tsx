@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { HashRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { ScheduleBlock } from './types/schedule';
-import { useSchedule } from './hooks/useSchedule';
+import { ScheduleProvider, useScheduleContext } from './contexts/ScheduleContext';
 import { Header } from './components/Header';
 import { Timetable } from './components/Timetable';
 import { TimetableList } from './components/TimetableList';
@@ -31,7 +31,7 @@ function TimetableDetail() {
     deleteBlock,
     duplicateBlock,
     save,
-  } = useSchedule();
+  } = useScheduleContext();
 
   // URL의 id로 시간표 선택
   useEffect(() => {
@@ -128,7 +128,7 @@ function TimetableListPage() {
     deleteSchedule,
     copySchedule,
     isLoading,
-  } = useSchedule();
+  } = useScheduleContext();
 
   const handleSelect = useCallback((id: string) => {
     navigate(`/schedule/${id}`);
@@ -164,10 +164,12 @@ function TimetableListPage() {
 function App() {
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<TimetableListPage />} />
-        <Route path="/schedule/:id" element={<TimetableDetail />} />
-      </Routes>
+      <ScheduleProvider>
+        <Routes>
+          <Route path="/" element={<TimetableListPage />} />
+          <Route path="/schedule/:id" element={<TimetableDetail />} />
+        </Routes>
+      </ScheduleProvider>
     </HashRouter>
   );
 }

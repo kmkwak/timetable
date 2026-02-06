@@ -98,7 +98,7 @@ export function TimetableList({ schedules, onSelect, onCreate, onDelete, onCopy 
               .map((schedule) => (
                 <div
                   key={schedule.id}
-                  className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
+                  className="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
                   onClick={() => onSelect(schedule.id)}
                 >
                   {/* 미리보기 */}
