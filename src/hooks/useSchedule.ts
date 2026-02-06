@@ -95,6 +95,7 @@ export function useSchedule() {
   const [currentScheduleId, setCurrentScheduleId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -119,6 +120,7 @@ export function useSchedule() {
         saveToStorage(githubData); // 로컬에도 캐시
         setSyncStatus('success');
         setIsLoading(false);
+        setInitialLoadComplete(true);
         return;
       }
 
@@ -148,6 +150,7 @@ export function useSchedule() {
       }
 
       setIsLoading(false);
+      setInitialLoadComplete(true);
     };
 
     loadData();
@@ -391,6 +394,7 @@ export function useSchedule() {
     // 현재 시간표 관련
     hasChanges,
     isLoading,
+    initialLoadComplete,
     syncStatus,
     setTitle,
     addBlock,

@@ -27,6 +27,7 @@ function TimetableDetail() {
     selectSchedule,
     hasChanges,
     isLoading,
+    initialLoadComplete,
     setTitle,
     addBlock,
     updateBlock,
@@ -42,7 +43,10 @@ function TimetableDetail() {
 
   // URL의 id로 시간표 선택
   useEffect(() => {
-    if (id && !isLoading && currentScheduleId !== id) {
+    // 초기 로드가 완료되기 전에는 아무것도 하지 않음
+    if (!initialLoadComplete) return;
+
+    if (id && currentScheduleId !== id) {
       const exists = schedules.some((s) => s.id === id);
       if (exists) {
         selectSchedule(id);
@@ -50,7 +54,7 @@ function TimetableDetail() {
         navigate('/', { replace: true });
       }
     }
-  }, [id, schedules, isLoading, currentScheduleId, selectSchedule, navigate]);
+  }, [id, schedules, initialLoadComplete, currentScheduleId, selectSchedule, navigate]);
 
   const handleEditBlock = useCallback((block: ScheduleBlock) => {
     if (isMobile) return;
@@ -72,9 +76,15 @@ function TimetableDetail() {
     navigate('/');
   }, [selectSchedule, navigate]);
 
-  if (isLoading) {
+  const handleSaveAndExit = useCallback(async () => {
+    await save();
+    exitEditMode();
+  }, [save, exitEditMode]);
+
+  // 로딩 중이거나 초기 로드가 완료되지 않은 경우
+  if (isLoading || !initialLoadComplete) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
+      <div className="h-full min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">불러오는 중...</p>
@@ -88,7 +98,7 @@ function TimetableDetail() {
     if (id && schedules.some((s) => s.id === id)) {
       // 시간표가 존재하는데 아직 선택 안됨 - 로딩 표시
       return (
-        <div className="h-full flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
+        <div className="h-full min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600">불러오는 중...</p>
@@ -96,19 +106,15 @@ function TimetableDetail() {
         </div>
       );
     }
+    // 초기 로드 완료 후에도 시간표를 찾을 수 없는 경우
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
+      <div className="h-full min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
         <div className="text-center">
           <p className="text-gray-600">시간표를 찾을 수 없습니다</p>
         </div>
       </div>
     );
   }
-
-  const handleSaveAndExit = useCallback(async () => {
-    await save();
-    exitEditMode();
-  }, [save, exitEditMode]);
 
   return (
     <div className="h-full flex justify-center items-center p-2 sm:p-6 bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
@@ -213,10 +219,12 @@ function App() {
   return (
     <HashRouter>
       <ScheduleProvider>
-        <Routes>
-          <Route path="/" element={<TimetableListPage />} />
-          <Route path="/schedule/:id" element={<TimetableDetail />} />
-        </Routes>
+        <div className="h-full">
+          <Routes>
+            <Route path="/" element={<TimetableListPage />} />
+            <Route path="/schedule/:id" element={<TimetableDetail />} />
+          </Routes>
+        </div>
       </ScheduleProvider>
     </HashRouter>
   );
