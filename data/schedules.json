@@ -46,15 +46,15 @@
         },
         {
           "id": "65905b96-0eed-478f-a8e5-dd259fd93246",
-          "title": "새 일정",
+          "title": "폴리",
           "day": 0,
           "startTime": 890,
           "endTime": 950,
-          "color": "violet"
+          "color": "sky"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394955330
+      "updatedAt": 1770394969932
     }
   ]
 }
