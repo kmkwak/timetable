@@ -49,12 +49,12 @@
           "title": "폴리",
           "day": 0,
           "startTime": 880,
-          "endTime": 950,
+          "endTime": 970,
           "color": "sky"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394973708
+      "updatedAt": 1770394976291
     }
   ]
 }
