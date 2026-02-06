@@ -11,10 +11,18 @@
           "startTime": 530,
           "endTime": 770,
           "color": "peach"
+        },
+        {
+          "id": "764c8bb0-ea66-421e-96e8-3dc93a3f6cf8",
+          "title": "학교 수업",
+          "day": 1,
+          "startTime": 530,
+          "endTime": 770,
+          "color": "peach"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394886405
+      "updatedAt": 1770394894391
     }
   ]
 }
