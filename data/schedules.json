@@ -256,13 +256,13 @@
           "id": "d7197999-a277-4e73-9fef-b79e7fe174fb",
           "title": "새 일정",
           "day": 4,
-          "startTime": 910,
-          "endTime": 970,
+          "startTime": 880,
+          "endTime": 940,
           "color": "sky"
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770395644584
+      "updatedAt": 1770395647544
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
