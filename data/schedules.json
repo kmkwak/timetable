@@ -366,15 +366,15 @@
         },
         {
           "id": "0dcb1a0d-e0a7-45d2-b000-e5f4af8d7ec4",
-          "title": "새 일정",
+          "title": "피아노",
           "day": 0,
           "startTime": 900,
           "endTime": 960,
-          "color": "sky"
+          "color": "violet"
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770395917637
+      "updatedAt": 1770395929755
     }
   ]
 }
