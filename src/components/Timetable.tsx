@@ -8,11 +8,12 @@ import { pixelsToMinutes } from '../utils/time';
 
 interface TimetableProps {
   blocks: ScheduleBlock[];
-  onAddBlock: (day: number, startTime: number) => ScheduleBlock | null;
-  onUpdateBlock: (id: string, updates: Partial<ScheduleBlock>) => void;
-  onDeleteBlock: (id: string) => void;
-  onDuplicateBlock: (id: string, day: number, startTime: number) => ScheduleBlock | null;
-  onEditBlock: (block: ScheduleBlock) => void;
+  onAddBlock?: (day: number, startTime: number) => ScheduleBlock | null;
+  onUpdateBlock?: (id: string, updates: Partial<ScheduleBlock>) => void;
+  onDeleteBlock?: (id: string) => void;
+  onDuplicateBlock?: (id: string, day: number, startTime: number) => ScheduleBlock | null;
+  onEditBlock?: (block: ScheduleBlock) => void;
+  readOnly?: boolean;
 }
 
 export function Timetable({
@@ -22,15 +23,18 @@ export function Timetable({
   onDeleteBlock,
   onDuplicateBlock,
   onEditBlock,
+  readOnly = false,
 }: TimetableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [ghostBlock, setGhostBlock] = useState<GhostBlockType | null>(null);
 
+  // readOnly일 때는 빈 함수 사용
+  const noopUpdate = useCallback(() => {}, []);
   const { isDragging, startDrag, onDrag, endDrag, wasJustDragging } = useDragDrop({
     blocks,
-    updateBlock: onUpdateBlock,
+    updateBlock: readOnly ? noopUpdate : (onUpdateBlock || noopUpdate),
     containerRef: gridRef,
   });
 
@@ -74,11 +78,11 @@ export function Timetable({
 
   // 빈 셀 클릭 처리
   const handleCellClick = useCallback((e: React.MouseEvent, day: number) => {
-    if (isMobile) return; // 모바일에서는 비활성화
+    if (readOnly || isMobile) return; // readOnly나 모바일에서는 비활성화
     if (isDragging || wasJustDragging()) return;
 
     // 고스트 블록 배치 모드
-    if (ghostBlock) {
+    if (ghostBlock && onDuplicateBlock) {
       const gridRect = gridRef.current?.getBoundingClientRect();
       if (!gridRect) return;
 
@@ -93,6 +97,7 @@ export function Timetable({
     }
 
     // 새 블록 생성
+    if (!onAddBlock) return;
     const gridRect = gridRef.current?.getBoundingClientRect();
     if (!gridRect) return;
 
@@ -102,7 +107,7 @@ export function Timetable({
     const startTime = pixelsToMinutes(y, gridHeight);
 
     onAddBlock(day, startTime);
-  }, [isMobile, isDragging, ghostBlock, onAddBlock, onDuplicateBlock, wasJustDragging]);
+  }, [readOnly, isMobile, isDragging, ghostBlock, onAddBlock, onDuplicateBlock, wasJustDragging]);
 
   // 복제 시작
   const handleStartDuplicate = useCallback((block: ScheduleBlock) => {
@@ -194,12 +199,12 @@ export function Timetable({
                     <TimeBlock
                       key={block.id}
                       block={block}
-                      onStartDrag={startDrag}
-                      onClick={() => onEditBlock(block)}
-                      onDelete={() => onDeleteBlock(block.id)}
+                      onStartDrag={readOnly ? () => {} : startDrag}
+                      onClick={() => onEditBlock?.(block)}
+                      onDelete={() => onDeleteBlock?.(block.id)}
                       onDuplicate={() => handleStartDuplicate(block)}
                       isDragging={isDragging}
-                      isMobile={isMobile}
+                      isMobile={isMobile || readOnly}
                     />
                   ))}
               </div>

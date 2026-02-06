@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { ScheduleData, ScheduleBlock, ScheduleListData } from '../types/schedule';
 import { saveToStorage, loadFromStorage } from '../utils/storage';
-import { fetchFromGitHub, saveToGitHub, isGitHubConfigured } from '../utils/github';
+import { fetchFromGitHub, saveToGitHub, isGitHubTokenConfigured } from '../utils/github';
 import { generateId } from '../utils/time';
 import { COLOR_KEYS, TIME_START, TIME_END } from '../config/constants';
 
@@ -96,6 +96,10 @@ export function useSchedule() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // 토큰이 있으면 편집 가능
+  const canEdit = isGitHubTokenConfigured();
 
   // 현재 선택된 시간표
   const currentSchedule = currentScheduleId
@@ -106,24 +110,21 @@ export function useSchedule() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
+      setSyncStatus('syncing');
 
-      // GitHub에서 먼저 시도
-      if (isGitHubConfigured()) {
-        setSyncStatus('syncing');
-        const githubData = await fetchFromGitHub();
-        if (githubData) {
-          setListData(githubData);
-          saveToStorage(githubData); // 로컬에도 캐시
-          setSyncStatus('success');
-          setIsLoading(false);
-          return;
-        }
-        setSyncStatus('error');
+      // GitHub에서 먼저 시도 (공개 읽기 - 토큰 없이도 가능)
+      const githubData = await fetchFromGitHub();
+      if (githubData) {
+        setListData(githubData);
+        saveToStorage(githubData); // 로컬에도 캐시
+        setSyncStatus('success');
+        setIsLoading(false);
+        return;
       }
 
-      // GitHub 실패 또는 미설정 시 로컬 스토리지 사용
+      // GitHub 실패 시 로컬 스토리지 사용
+      setSyncStatus('error');
       const savedData = loadFromStorage();
-      let localData: ScheduleListData | null = null;
 
       if (savedData) {
         // 기존 단일 시간표 데이터를 새 형식으로 마이그레이션
@@ -136,21 +137,13 @@ export function useSchedule() {
             createdAt: Date.now(),
             updatedAt: Date.now(),
           };
-          localData = {
+          const localData: ScheduleListData = {
             schedules: [migratedSchedule],
           };
           setListData(localData);
           saveToStorage(localData);
         } else if ('schedules' in savedData) {
-          localData = savedData as ScheduleListData;
-          setListData(localData);
-        }
-
-        // 로컬 데이터가 있고 GitHub이 설정되어 있으면 업로드
-        if (localData && isGitHubConfigured()) {
-          setSyncStatus('syncing');
-          const success = await saveToGitHub(localData);
-          setSyncStatus(success ? 'success' : 'error');
+          setListData(savedData as ScheduleListData);
         }
       }
 
@@ -160,12 +153,43 @@ export function useSchedule() {
     loadData();
   }, []);
 
+  // 편집 모드 진입
+  const enterEditMode = useCallback(() => {
+    if (canEdit) {
+      setIsEditMode(true);
+    }
+  }, [canEdit]);
+
+  // 편집 모드 종료 (저장 후)
+  const exitEditMode = useCallback(() => {
+    setIsEditMode(false);
+  }, []);
+
+  // 편집 취소 (변경사항 버리고 다시 로드)
+  const cancelEdit = useCallback(async () => {
+    setIsEditMode(false);
+    setHasChanges(false);
+
+    // GitHub에서 다시 로드
+    const githubData = await fetchFromGitHub();
+    if (githubData) {
+      setListData(githubData);
+      saveToStorage(githubData);
+    } else {
+      // GitHub 실패 시 로컬에서 로드
+      const savedData = loadFromStorage();
+      if (savedData && 'schedules' in savedData) {
+        setListData(savedData as ScheduleListData);
+      }
+    }
+  }, []);
+
   // 저장
   const save = useCallback(async () => {
     saveToStorage(listData);
 
     // GitHub 동기화
-    if (isGitHubConfigured()) {
+    if (isGitHubTokenConfigured()) {
       setSyncStatus('syncing');
       const success = await saveToGitHub(listData);
       setSyncStatus(success ? 'success' : 'error');
@@ -374,5 +398,11 @@ export function useSchedule() {
     deleteBlock,
     duplicateBlock,
     save,
+    // 편집 모드
+    isEditMode,
+    canEdit,
+    enterEditMode,
+    exitEditMode,
+    cancelEdit,
   };
 }

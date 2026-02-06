@@ -4,20 +4,64 @@ import { ScheduleListData } from '../types/schedule';
 const GITHUB_OWNER = 'kmkwak';
 const GITHUB_REPO = 'timetable';
 const GITHUB_PATH = 'data/schedules.json';
-const GITHUB_TOKEN = ''; // GitHub Personal Access Token 입력 (보안상 코드에 직접 입력하지 마세요)
+const TOKEN_STORAGE_KEY = 'timetable_github_token';
 
-export async function fetchFromGitHub(): Promise<ScheduleListData | null> {
-  if (!GITHUB_TOKEN) return null;
+// 간단한 난독화 (복사-붙여넣기 방지)
+function obfuscate(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  const base64 = btoa(String.fromCharCode(...bytes));
+  const reversed = base64.split('').reverse().join('');
+  return `tt_${reversed}_tt`;
+}
 
+function deobfuscate(text: string): string {
+  if (!text.startsWith('tt_') || !text.endsWith('_tt')) {
+    return text; // 이전 버전 호환 (난독화 안 된 토큰)
+  }
+  const reversed = text.slice(3, -3);
+  const base64 = reversed.split('').reverse().join('');
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+// 토큰 관리
+export function getGitHubToken(): string {
+  const stored = localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+  if (!stored) return '';
   try {
+    return deobfuscate(stored);
+  } catch {
+    return '';
+  }
+}
+
+export function setGitHubToken(token: string): void {
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, obfuscate(token));
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
+export function isGitHubTokenConfigured(): boolean {
+  return !!getGitHubToken();
+}
+
+// 공개 읽기 (토큰 없이)
+export async function fetchFromGitHub(): Promise<ScheduleListData | null> {
+  try {
+    // 토큰이 있으면 인증 요청, 없으면 공개 요청
+    const token = getGitHubToken();
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github.v3+json',
+    };
+    if (token) {
+      headers.Authorization = `token ${token}`;
+    }
+
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`,
-      {
-        headers: {
-          Authorization: `token ${GITHUB_TOKEN}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-      }
+      { headers }
     );
 
     if (!response.ok) {
@@ -38,7 +82,8 @@ export async function fetchFromGitHub(): Promise<ScheduleListData | null> {
 }
 
 export async function saveToGitHub(data: ScheduleListData): Promise<boolean> {
-  if (!GITHUB_TOKEN) return false;
+  const token = getGitHubToken();
+  if (!token) return false;
 
   try {
     // 먼저 현재 파일의 SHA를 가져옴 (업데이트를 위해 필요)
@@ -48,7 +93,7 @@ export async function saveToGitHub(data: ScheduleListData): Promise<boolean> {
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}`,
         {
           headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
+            Authorization: `token ${token}`,
             Accept: 'application/vnd.github.v3+json',
           },
         }
@@ -68,7 +113,7 @@ export async function saveToGitHub(data: ScheduleListData): Promise<boolean> {
       {
         method: 'PUT',
         headers: {
-          Authorization: `token ${GITHUB_TOKEN}`,
+          Authorization: `token ${token}`,
           Accept: 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
         },
@@ -85,8 +130,4 @@ export async function saveToGitHub(data: ScheduleListData): Promise<boolean> {
     console.error('GitHub save error:', error);
     return false;
   }
-}
-
-export function isGitHubConfigured(): boolean {
-  return !!GITHUB_TOKEN;
 }

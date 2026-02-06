@@ -2,11 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 
 interface HeaderProps {
   title: string;
-  onTitleChange: (title: string) => void;
+  onTitleChange?: (title: string) => void;
   hasChanges: boolean;
-  onSave: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
   onBack: () => void;
   isMobile: boolean;
+  isEditMode?: boolean;
+  canEdit?: boolean;
+  onEnterEditMode?: () => void;
 }
 
 export function Header({
@@ -14,8 +18,12 @@ export function Header({
   onTitleChange,
   hasChanges,
   onSave,
+  onCancel,
   onBack,
   isMobile,
+  isEditMode = false,
+  canEdit = false,
+  onEnterEditMode,
 }: HeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
@@ -29,13 +37,13 @@ export function Header({
   }, [isEditing]);
 
   const handleStartEdit = () => {
-    if (isMobile) return; // 모바일에서는 편집 비활성화
+    if (isMobile || !isEditMode || !onTitleChange) return;
     setEditValue(title);
     setIsEditing(true);
   };
 
   const handleEndEdit = () => {
-    if (editValue.trim()) {
+    if (editValue.trim() && onTitleChange) {
       onTitleChange(editValue.trim());
     } else {
       setEditValue(title);
@@ -91,19 +99,42 @@ export function Header({
         )}
       </div>
 
-      {/* 저장 버튼 - 데스크톱만 */}
+      {/* 버튼 영역 - 데스크톱만 */}
       {!isMobile && (
-        <button
-          onClick={onSave}
-          disabled={!hasChanges}
-          className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 shadow-md ${
-            hasChanges
-              ? 'bg-white text-fuchsia-600 hover:bg-white/90 active:scale-95'
-              : 'bg-white/30 text-white/60 cursor-not-allowed'
-          }`}
-        >
-          저장
-        </button>
+        <div className="flex items-center gap-2">
+          {isEditMode ? (
+            /* 편집 모드: 취소/저장 버튼 */
+            <>
+              <button
+                onClick={onCancel}
+                className="px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 shadow-md bg-white/20 text-white hover:bg-white/30 active:scale-95"
+              >
+                취소
+              </button>
+              <button
+                onClick={onSave}
+                disabled={!hasChanges}
+                className={`px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 shadow-md ${
+                  hasChanges
+                    ? 'bg-white text-fuchsia-600 hover:bg-white/90 active:scale-95'
+                    : 'bg-white/30 text-white/60 cursor-not-allowed'
+                }`}
+              >
+                저장
+              </button>
+            </>
+          ) : (
+            /* 뷰 모드: 편집 버튼 (권한 있을 때만) */
+            canEdit && onEnterEditMode && (
+              <button
+                onClick={onEnterEditMode}
+                className="px-4 py-2 rounded-full font-medium text-sm transition-all duration-200 shadow-md bg-white text-fuchsia-600 hover:bg-white/90 active:scale-95"
+              >
+                편집
+              </button>
+            )
+          )}
+        </div>
       )}
     </header>
   );
