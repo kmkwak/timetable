@@ -6,7 +6,7 @@
       "blocks": [
         {
           "id": "bf9521c2-f611-4cbd-aa3e-18b25689c0b5",
-          "title": "새 일정",
+          "title": "학교 수업",
           "day": 0,
           "startTime": 530,
           "endTime": 770,
@@ -14,7 +14,7 @@
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394875191
+      "updatedAt": 1770394886405
     }
   ]
 }
