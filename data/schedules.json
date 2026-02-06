@@ -368,21 +368,21 @@
           "id": "0dcb1a0d-e0a7-45d2-b000-e5f4af8d7ec4",
           "title": "피아노",
           "day": 0,
-          "startTime": 900,
-          "endTime": 960,
+          "startTime": 1040,
+          "endTime": 1100,
           "color": "violet"
         },
         {
           "id": "3cf8157d-51ad-41c7-958b-40603579c45c",
           "title": "미술",
           "day": 0,
-          "startTime": 1020,
-          "endTime": 1080,
+          "startTime": 900,
+          "endTime": 960,
           "color": "amber"
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770395947454
+      "updatedAt": 1770395958729
     }
   ]
 }
