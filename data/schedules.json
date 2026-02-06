@@ -88,13 +88,21 @@
           "id": "912c13b5-e38e-4b9f-8ad0-1671e4dadde7",
           "title": "새 일정",
           "day": 0,
-          "startTime": 1000,
-          "endTime": 1060,
+          "startTime": 1020,
+          "endTime": 1080,
           "color": "cyan"
+        },
+        {
+          "id": "b2990d70-c8d5-4d08-8339-1c0e0fe3d0a5",
+          "title": "새 일정",
+          "day": 0,
+          "startTime": 1080,
+          "endTime": 1140,
+          "color": "sky"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770395389570
+      "updatedAt": 1770395399177
     },
     {
       "id": "feec8c86-dac6-451a-9c56-59d8816c1c61",
