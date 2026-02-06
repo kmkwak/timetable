@@ -91,10 +91,18 @@
           "startTime": 1020,
           "endTime": 1080,
           "color": "violet"
+        },
+        {
+          "id": "387d17bc-d91f-436f-87e9-34a73c602c92",
+          "title": "피아노",
+          "day": 1,
+          "startTime": 1020,
+          "endTime": 1080,
+          "color": "violet"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770395414620
+      "updatedAt": 1770395418701
     },
     {
       "id": "feec8c86-dac6-451a-9c56-59d8816c1c61",
