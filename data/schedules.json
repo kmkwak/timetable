@@ -232,8 +232,8 @@
           "id": "b571d40d-77e3-49d8-8624-d46ba9444093",
           "title": "피아노",
           "day": 1,
-          "startTime": 920,
-          "endTime": 980,
+          "startTime": 950,
+          "endTime": 1010,
           "color": "violet"
         },
         {
@@ -246,7 +246,7 @@
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770395605715
+      "updatedAt": 1770395611940
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
