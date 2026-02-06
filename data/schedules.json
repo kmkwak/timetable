@@ -227,10 +227,18 @@
           "startTime": 770,
           "endTime": 870,
           "color": "mint"
+        },
+        {
+          "id": "b571d40d-77e3-49d8-8624-d46ba9444093",
+          "title": "새 일정",
+          "day": 1,
+          "startTime": 970,
+          "endTime": 1030,
+          "color": "lime"
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770395257879
+      "updatedAt": 1770395481236
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
