@@ -149,14 +149,6 @@
           "color": "sky"
         },
         {
-          "id": "ff31421b-eeed-4ba7-8f56-bee58d8dcf46",
-          "title": "폴리",
-          "day": 3,
-          "startTime": 880,
-          "endTime": 970,
-          "color": "sky"
-        },
-        {
           "id": "5c8a7d2d-f10f-4670-a05d-c1e98bc08276",
           "title": "폴리",
           "day": 4,
@@ -166,7 +158,7 @@
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770395022590
+      "updatedAt": 1770395024114
     }
   ]
 }
