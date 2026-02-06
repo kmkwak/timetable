@@ -43,10 +43,18 @@
           "startTime": 530,
           "endTime": 770,
           "color": "peach"
+        },
+        {
+          "id": "65905b96-0eed-478f-a8e5-dd259fd93246",
+          "title": "새 일정",
+          "day": 0,
+          "startTime": 890,
+          "endTime": 950,
+          "color": "violet"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394915219
+      "updatedAt": 1770394955330
     }
   ]
 }
