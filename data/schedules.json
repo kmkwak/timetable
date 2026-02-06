@@ -1,3 +1,11 @@
 {
-  "schedules": []
+  "schedules": [
+    {
+      "id": "08dd461b-a57f-4539-be72-fa45557975cf",
+      "title": "폴리 매일",
+      "blocks": [],
+      "createdAt": 1770394847847,
+      "updatedAt": 1770394847847
+    }
+  ]
 }
