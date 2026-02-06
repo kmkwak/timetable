@@ -224,13 +224,13 @@
           "id": "63960285-0e6f-410c-99a3-f07a313ad809",
           "title": "방과후",
           "day": 0,
-          "startTime": 800,
-          "endTime": 860,
+          "startTime": 770,
+          "endTime": 870,
           "color": "mint"
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770395161747
+      "updatedAt": 1770395179275
     }
   ]
 }
