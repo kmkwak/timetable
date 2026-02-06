@@ -3,9 +3,18 @@
     {
       "id": "08dd461b-a57f-4539-be72-fa45557975cf",
       "title": "폴리 매일",
-      "blocks": [],
+      "blocks": [
+        {
+          "id": "bf9521c2-f611-4cbd-aa3e-18b25689c0b5",
+          "title": "새 일정",
+          "day": 0,
+          "startTime": 530,
+          "endTime": 590,
+          "color": "peach"
+        }
+      ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394847847
+      "updatedAt": 1770394867018
     }
   ]
 }
