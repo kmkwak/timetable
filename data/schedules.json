@@ -9,12 +9,12 @@
           "title": "새 일정",
           "day": 0,
           "startTime": 530,
-          "endTime": 590,
+          "endTime": 770,
           "color": "peach"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394867018
+      "updatedAt": 1770394875191
     }
   ]
 }
