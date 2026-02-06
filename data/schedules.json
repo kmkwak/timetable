@@ -163,10 +163,18 @@
           "startTime": 770,
           "endTime": 870,
           "color": "mint"
+        },
+        {
+          "id": "4b7f2d73-7d99-4e86-8f31-3d8df15e71de",
+          "title": "방과후",
+          "day": 1,
+          "startTime": 810,
+          "endTime": 910,
+          "color": "mint"
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770395244362
+      "updatedAt": 1770395247979
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
