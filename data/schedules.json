@@ -48,13 +48,13 @@
           "id": "65905b96-0eed-478f-a8e5-dd259fd93246",
           "title": "폴리",
           "day": 0,
-          "startTime": 890,
+          "startTime": 880,
           "endTime": 950,
           "color": "sky"
         }
       ],
       "createdAt": 1770394847847,
-      "updatedAt": 1770394969932
+      "updatedAt": 1770394973708
     }
   ]
 }
