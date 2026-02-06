@@ -8,8 +8,15 @@ export interface ScheduleBlock {
 }
 
 export interface ScheduleData {
+  id: string;
   blocks: ScheduleBlock[];
   title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ScheduleListData {
+  schedules: ScheduleData[];
 }
 
 export type DragMode = 'move' | 'resize-top' | 'resize-bottom' | null;

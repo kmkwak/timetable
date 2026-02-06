@@ -1,20 +1,11 @@
-// PIN 설정 (4자리)
-export const PIN = '1234';
-
-// GitHub 설정
-export const GITHUB_OWNER = 'kmkwak';
-export const GITHUB_REPO = 'timetable';
-export const GITHUB_PATH = 'data/schedule.json';
-export const GITHUB_TOKEN = ''; // 여기에 GitHub Personal Access Token 입력
-
 // 시간표 설정
 export const TIME_START = 8; // 8시
 export const TIME_END = 19; // 19시
 export const TIME_SLOT_MINUTES = 10; // 10분 단위 스냅
 
-// 요일
-export const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
-export const DAYS_SHORT = ['월', '화', '수', '목', '금', '토', '일'];
+// 요일 (월~금)
+export const DAYS = ['월', '화', '수', '목', '금'];
+export const DAYS_SHORT = ['월', '화', '수', '목', '금'];
 
 // 드래그 임계값 (픽셀)
 export const DRAG_THRESHOLD = 5;
@@ -36,5 +27,4 @@ export const COLORS: Record<string, { from: string; to: string; text: string }> 
 export const COLOR_KEYS = Object.keys(COLORS);
 
 // localStorage 키
-export const STORAGE_KEY = 'timetable_schedule';
-export const AUTH_KEY = 'timetable_auth';
+export const STORAGE_KEY = 'timetable_schedules';

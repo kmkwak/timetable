@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { ScheduleBlock, DragState, DragMode } from '../types/schedule';
-import { DRAG_THRESHOLD, TIME_START, TIME_END } from '../config/constants';
+import { DRAG_THRESHOLD, TIME_START, TIME_END, DAYS } from '../config/constants';
 import { pixelsToMinutes, snapToSlot } from '../utils/time';
 
 interface UseDragDropProps {
@@ -148,10 +148,10 @@ export function useDragDrop({ blocks, updateBlock, containerRef }: UseDragDropPr
     const rect = containerRef.current.getBoundingClientRect();
     const timeColumnWidth = 40; // 시간 열 너비
     const gridWidth = rect.width - timeColumnWidth;
-    const dayWidth = gridWidth / 7;
+    const dayWidth = gridWidth / DAYS.length;
     const x = clientX - rect.left - timeColumnWidth;
     const day = Math.floor(x / dayWidth);
-    return Math.max(0, Math.min(6, day));
+    return Math.max(0, Math.min(DAYS.length - 1, day));
   }, [containerRef]);
 
   const getTimeFromY = useCallback((clientY: number): number => {

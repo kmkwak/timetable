@@ -74,6 +74,7 @@ export function Timetable({
 
   // 빈 셀 클릭 처리
   const handleCellClick = useCallback((e: React.MouseEvent, day: number) => {
+    if (isMobile) return; // 모바일에서는 비활성화
     if (isDragging || wasJustDragging()) return;
 
     // 고스트 블록 배치 모드
@@ -101,12 +102,13 @@ export function Timetable({
     const startTime = pixelsToMinutes(y, gridHeight);
 
     onAddBlock(day, startTime);
-  }, [isDragging, ghostBlock, onAddBlock, onDuplicateBlock, wasJustDragging]);
+  }, [isMobile, isDragging, ghostBlock, onAddBlock, onDuplicateBlock, wasJustDragging]);
 
   // 복제 시작
   const handleStartDuplicate = useCallback((block: ScheduleBlock) => {
+    if (isMobile) return; // 모바일에서는 비활성화
     setGhostBlock({ block, active: true });
-  }, []);
+  }, [isMobile]);
 
   // 복제 취소
   const handleCancelDuplicate = useCallback(() => {

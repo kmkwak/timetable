@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ScheduleData, ScheduleBlock } from '../types/schedule';
+import { ScheduleData, ScheduleBlock, ScheduleListData } from '../types/schedule';
 import { saveToStorage, loadFromStorage } from '../utils/storage';
-import { fetchFromGitHub, saveToGitHub } from '../utils/github';
 import { generateId } from '../utils/time';
 import { COLOR_KEYS, TIME_START, TIME_END } from '../config/constants';
 
@@ -36,10 +35,8 @@ function findNonOverlappingTime(
   }
 
   // 원하는 시간대 근처에서 빈 공간 찾기
-  // 기존 블록들 사이의 빈 공간을 확인
   const gaps: { start: number; end: number }[] = [];
 
-  // 맨 처음부터 첫 번째 블록까지
   if (dayBlocks.length === 0) {
     return {
       startTime: Math.max(minTime, preferredStart),
@@ -51,25 +48,21 @@ function findNonOverlappingTime(
     gaps.push({ start: minTime, end: dayBlocks[0].startTime });
   }
 
-  // 블록들 사이의 빈 공간
   for (let i = 0; i < dayBlocks.length - 1; i++) {
     if (dayBlocks[i].endTime < dayBlocks[i + 1].startTime) {
       gaps.push({ start: dayBlocks[i].endTime, end: dayBlocks[i + 1].startTime });
     }
   }
 
-  // 마지막 블록부터 끝까지
   if (dayBlocks[dayBlocks.length - 1].endTime < maxTime) {
     gaps.push({ start: dayBlocks[dayBlocks.length - 1].endTime, end: maxTime });
   }
 
-  // 원하는 시간에 가장 가까운 빈 공간 찾기
   let bestGap: { start: number; end: number } | null = null;
   let bestDistance = Infinity;
 
   for (const gap of gaps) {
     if (gap.end - gap.start >= duration) {
-      // 이 빈 공간에 블록을 놓을 수 있음
       const gapCenter = (gap.start + gap.end) / 2;
       const distance = Math.abs(gapCenter - (preferredStart + duration / 2));
       if (distance < bestDistance) {
@@ -80,7 +73,6 @@ function findNonOverlappingTime(
   }
 
   if (bestGap) {
-    // 빈 공간 내에서 원하는 시간에 최대한 가깝게 배치
     let startTime = preferredStart;
     if (startTime < bestGap.start) {
       startTime = bestGap.start;
@@ -90,65 +82,149 @@ function findNonOverlappingTime(
     return { startTime, endTime: startTime + duration };
   }
 
-  // 빈 공간이 없으면 null 반환
   return null;
 }
 
-const initialData: ScheduleData = {
-  title: '시간표',
-  blocks: [],
+const initialListData: ScheduleListData = {
+  schedules: [],
 };
 
 export function useSchedule() {
-  const [data, setData] = useState<ScheduleData>(initialData);
+  const [listData, setListData] = useState<ScheduleListData>(initialListData);
+  const [currentScheduleId, setCurrentScheduleId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  // 현재 선택된 시간표
+  const currentSchedule = currentScheduleId
+    ? listData.schedules.find((s) => s.id === currentScheduleId) || null
+    : null;
 
   // 초기 로드
   useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      setSyncStatus('loading');
+    setIsLoading(true);
+    const savedData = loadFromStorage();
 
-      // GitHub에서 먼저 시도
-      const githubData = await fetchFromGitHub();
-      if (githubData) {
-        setData(githubData);
-        saveToStorage(githubData);
-        setSyncStatus('success');
-      } else {
-        // 실패 시 localStorage에서 로드
-        const localData = loadFromStorage();
-        if (localData) {
-          setData(localData);
-        }
-        setSyncStatus('error');
+    if (savedData) {
+      // 기존 단일 시간표 데이터를 새 형식으로 마이그레이션
+      if ('blocks' in savedData && !('schedules' in savedData)) {
+        const oldData = savedData as { blocks: ScheduleBlock[]; title: string };
+        const migratedSchedule: ScheduleData = {
+          id: generateId(),
+          title: oldData.title || '시간표',
+          blocks: oldData.blocks || [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        const newListData: ScheduleListData = {
+          schedules: [migratedSchedule],
+        };
+        setListData(newListData);
+        saveToStorage(newListData);
+      } else if ('schedules' in savedData) {
+        setListData(savedData as ScheduleListData);
       }
-
-      setIsLoading(false);
     }
 
-    load();
+    setIsLoading(false);
   }, []);
 
-  // 타이틀 변경
-  const setTitle = useCallback((title: string) => {
-    setData((prev) => ({ ...prev, title }));
+  // 저장
+  const save = useCallback(() => {
+    saveToStorage(listData);
+    setHasChanges(false);
+  }, [listData]);
+
+  // 자동 저장
+  useEffect(() => {
+    if (hasChanges) {
+      const timer = setTimeout(() => {
+        save();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasChanges, save]);
+
+  // 새 시간표 생성
+  const createSchedule = useCallback((title: string): ScheduleData => {
+    const newSchedule: ScheduleData = {
+      id: generateId(),
+      title,
+      blocks: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    setListData((prev) => ({
+      schedules: [...prev.schedules, newSchedule],
+    }));
     setHasChanges(true);
+
+    return newSchedule;
   }, []);
+
+  // 시간표 삭제
+  const deleteSchedule = useCallback((id: string) => {
+    setListData((prev) => ({
+      schedules: prev.schedules.filter((s) => s.id !== id),
+    }));
+    if (currentScheduleId === id) {
+      setCurrentScheduleId(null);
+    }
+    setHasChanges(true);
+  }, [currentScheduleId]);
+
+  // 시간표 복사
+  const copySchedule = useCallback((id: string): ScheduleData | null => {
+    const sourceSchedule = listData.schedules.find((s) => s.id === id);
+    if (!sourceSchedule) return null;
+
+    const copiedSchedule: ScheduleData = {
+      ...sourceSchedule,
+      id: generateId(),
+      title: `${sourceSchedule.title} (복사본)`,
+      blocks: sourceSchedule.blocks.map((block) => ({
+        ...block,
+        id: generateId(),
+      })),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    setListData((prev) => ({
+      schedules: [...prev.schedules, copiedSchedule],
+    }));
+    setHasChanges(true);
+
+    return copiedSchedule;
+  }, [listData.schedules]);
+
+  // 시간표 선택
+  const selectSchedule = useCallback((id: string | null) => {
+    setCurrentScheduleId(id);
+  }, []);
+
+  // 시간표 타이틀 변경
+  const setTitle = useCallback((title: string) => {
+    if (!currentScheduleId) return;
+
+    setListData((prev) => ({
+      schedules: prev.schedules.map((s) =>
+        s.id === currentScheduleId
+          ? { ...s, title, updatedAt: Date.now() }
+          : s
+      ),
+    }));
+    setHasChanges(true);
+  }, [currentScheduleId]);
 
   // 블록 추가
   const addBlock = useCallback((day: number, startTime: number): ScheduleBlock | null => {
-    const duration = 60; // 1시간 기본
+    if (!currentSchedule) return null;
 
-    // 겹치지 않는 시간 찾기
-    const slot = findNonOverlappingTime(data.blocks, day, startTime, duration);
-    if (!slot) {
-      // 빈 공간이 없으면 블록 생성 안함
-      return null;
-    }
+    const duration = 60;
+    const slot = findNonOverlappingTime(currentSchedule.blocks, day, startTime, duration);
+    if (!slot) return null;
 
     const newBlock: ScheduleBlock = {
       id: generateId(),
@@ -159,48 +235,66 @@ export function useSchedule() {
       color: COLOR_KEYS[Math.floor(Math.random() * COLOR_KEYS.length)],
     };
 
-    setData((prev) => ({
-      ...prev,
-      blocks: [...prev.blocks, newBlock],
+    setListData((prev) => ({
+      schedules: prev.schedules.map((s) =>
+        s.id === currentScheduleId
+          ? { ...s, blocks: [...s.blocks, newBlock], updatedAt: Date.now() }
+          : s
+      ),
     }));
     setHasChanges(true);
 
     return newBlock;
-  }, [data.blocks]);
+  }, [currentSchedule, currentScheduleId]);
 
   // 블록 업데이트
   const updateBlock = useCallback((id: string, updates: Partial<ScheduleBlock>) => {
-    setData((prev) => ({
-      ...prev,
-      blocks: prev.blocks.map((block) =>
-        block.id === id ? { ...block, ...updates } : block
+    if (!currentScheduleId) return;
+
+    setListData((prev) => ({
+      schedules: prev.schedules.map((s) =>
+        s.id === currentScheduleId
+          ? {
+              ...s,
+              blocks: s.blocks.map((block) =>
+                block.id === id ? { ...block, ...updates } : block
+              ),
+              updatedAt: Date.now(),
+            }
+          : s
       ),
     }));
     setHasChanges(true);
-  }, []);
+  }, [currentScheduleId]);
 
   // 블록 삭제
   const deleteBlock = useCallback((id: string) => {
-    setData((prev) => ({
-      ...prev,
-      blocks: prev.blocks.filter((block) => block.id !== id),
+    if (!currentScheduleId) return;
+
+    setListData((prev) => ({
+      schedules: prev.schedules.map((s) =>
+        s.id === currentScheduleId
+          ? {
+              ...s,
+              blocks: s.blocks.filter((block) => block.id !== id),
+              updatedAt: Date.now(),
+            }
+          : s
+      ),
     }));
     setHasChanges(true);
-  }, []);
+  }, [currentScheduleId]);
 
   // 블록 복제
   const duplicateBlock = useCallback((id: string, targetDay: number, targetStartTime: number): ScheduleBlock | null => {
-    const sourceBlock = data.blocks.find((b) => b.id === id);
+    if (!currentSchedule) return null;
+
+    const sourceBlock = currentSchedule.blocks.find((b) => b.id === id);
     if (!sourceBlock) return null;
 
     const duration = sourceBlock.endTime - sourceBlock.startTime;
-
-    // 겹치지 않는 시간 찾기
-    const slot = findNonOverlappingTime(data.blocks, targetDay, targetStartTime, duration);
-    if (!slot) {
-      // 빈 공간이 없으면 복제 안함
-      return null;
-    }
+    const slot = findNonOverlappingTime(currentSchedule.blocks, targetDay, targetStartTime, duration);
+    if (!slot) return null;
 
     const newBlock: ScheduleBlock = {
       ...sourceBlock,
@@ -210,44 +304,30 @@ export function useSchedule() {
       endTime: slot.endTime,
     };
 
-    setData((prev) => ({
-      ...prev,
-      blocks: [...prev.blocks, newBlock],
+    setListData((prev) => ({
+      schedules: prev.schedules.map((s) =>
+        s.id === currentScheduleId
+          ? { ...s, blocks: [...s.blocks, newBlock], updatedAt: Date.now() }
+          : s
+      ),
     }));
     setHasChanges(true);
 
     return newBlock;
-  }, [data.blocks]);
-
-  // 저장
-  const save = useCallback(async () => {
-    if (!hasChanges || isSaving) return;
-
-    setIsSaving(true);
-    setSyncStatus('loading');
-
-    // localStorage에 먼저 저장
-    saveToStorage(data);
-
-    // GitHub에 저장
-    const success = await saveToGitHub(data);
-
-    if (success) {
-      setSyncStatus('success');
-      setHasChanges(false);
-    } else {
-      setSyncStatus('error');
-    }
-
-    setIsSaving(false);
-  }, [data, hasChanges, isSaving]);
+  }, [currentSchedule, currentScheduleId]);
 
   return {
-    data,
+    // 목록 관련
+    schedules: listData.schedules,
+    currentSchedule,
+    currentScheduleId,
+    createSchedule,
+    deleteSchedule,
+    copySchedule,
+    selectSchedule,
+    // 현재 시간표 관련
     hasChanges,
-    isSaving,
     isLoading,
-    syncStatus,
     setTitle,
     addBlock,
     updateBlock,

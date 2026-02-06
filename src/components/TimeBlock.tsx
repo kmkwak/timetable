@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { ScheduleBlock, DragMode } from '../types/schedule';
 import { COLORS, TIME_START, TIME_END, DRAG_THRESHOLD } from '../config/constants';
 import { minutesToTimeString } from '../utils/time';
@@ -22,7 +22,6 @@ export function TimeBlock({
   isDragging,
   isMobile,
 }: TimeBlockProps) {
-  const [showActions, setShowActions] = useState(false);
   const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
 
   const color = COLORS[block.color] || COLORS.blue;
@@ -34,19 +33,22 @@ export function TimeBlock({
   const heightPercent = (duration / totalMinutes) * 100;
 
   const handleMouseDown = useCallback((e: React.MouseEvent, mode: DragMode) => {
+    if (isMobile) return; // 모바일에서는 드래그 비활성화
     e.stopPropagation();
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     onStartDrag(block.id, mode, e.clientX, e.clientY);
-  }, [block.id, onStartDrag]);
+  }, [block.id, onStartDrag, isMobile]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent, mode: DragMode) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent, _mode: DragMode) => {
+    if (isMobile) return; // 모바일에서는 드래그 비활성화
     e.stopPropagation();
     const touch = e.touches[0];
     mouseDownPos.current = { x: touch.clientX, y: touch.clientY };
-    onStartDrag(block.id, mode, touch.clientX, touch.clientY);
-  }, [block.id, onStartDrag]);
+    onStartDrag(block.id, _mode, touch.clientX, touch.clientY);
+  }, [block.id, onStartDrag, isMobile]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
+    if (isMobile) return; // 모바일에서는 클릭 비활성화
     e.stopPropagation();
 
     // 드래그가 발생했으면 클릭 무시
@@ -59,20 +61,8 @@ export function TimeBlock({
       }
     }
     mouseDownPos.current = null;
-
-    if (isMobile) {
-      setShowActions(true);
-    } else {
-      onClick();
-    }
+    onClick();
   }, [isMobile, onClick]);
-
-  const handleActionClick = useCallback((action: 'edit' | 'duplicate' | 'delete') => {
-    setShowActions(false);
-    if (action === 'edit') onClick();
-    else if (action === 'duplicate') onDuplicate();
-    else if (action === 'delete') onDelete();
-  }, [onClick, onDuplicate, onDelete]);
 
   return (
     <>
@@ -132,23 +122,25 @@ export function TimeBlock({
 
         {/* 데스크톱 액션 버튼 */}
         {!isMobile && (
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
             <button
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDuplicate();
               }}
-              className="w-6 h-6 rounded bg-white/90 text-gray-700 text-xs hover:bg-white flex items-center justify-center"
+              className="w-6 h-6 rounded bg-white/90 text-gray-700 text-xs hover:bg-white flex items-center justify-center shadow-sm"
               title="복제"
             >
               ⧉
             </button>
             <button
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
-              className="w-6 h-6 rounded bg-white/90 text-red-600 text-xs hover:bg-white flex items-center justify-center"
+              className="w-6 h-6 rounded bg-white/90 text-red-600 text-xs hover:bg-white flex items-center justify-center shadow-sm"
               title="삭제"
             >
               ×
@@ -157,37 +149,6 @@ export function TimeBlock({
         )}
       </div>
 
-      {/* 모바일 액션 오버레이 */}
-      {isMobile && showActions && (
-        <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
-          onClick={() => setShowActions(false)}
-        >
-          <div
-            className="bg-white rounded-2xl p-4 flex flex-col gap-2 min-w-[200px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => handleActionClick('edit')}
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-lg"
-            >
-              ✏️ 편집
-            </button>
-            <button
-              onClick={() => handleActionClick('duplicate')}
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-lg"
-            >
-              ⧉ 복제
-            </button>
-            <button
-              onClick={() => handleActionClick('delete')}
-              className="py-3 px-4 text-left hover:bg-gray-100 rounded-lg text-red-600"
-            >
-              × 삭제
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }
