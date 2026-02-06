@@ -209,7 +209,7 @@
           "title": "폴리",
           "day": 1,
           "startTime": 970,
-          "endTime": 1060,
+          "endTime": 1100,
           "color": "sky"
         },
         {
@@ -222,7 +222,7 @@
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770395120175
+      "updatedAt": 1770395129516
     }
   ]
 }
