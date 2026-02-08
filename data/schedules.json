@@ -345,7 +345,7 @@
           "title": "방과후",
           "day": 2,
           "startTime": 810,
-          "endTime": 910,
+          "endTime": 930,
           "color": "mint"
         },
         {
@@ -398,7 +398,7 @@
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770569294161
+      "updatedAt": 1770569297544
     }
   ]
 }
