@@ -376,8 +376,8 @@
           "id": "3cf8157d-51ad-41c7-958b-40603579c45c",
           "title": "미술",
           "day": 0,
-          "startTime": 900,
-          "endTime": 960,
+          "startTime": 1020,
+          "endTime": 1080,
           "color": "amber"
         },
         {
@@ -398,7 +398,7 @@
         }
       ],
       "createdAt": 1770395097696,
-      "updatedAt": 1770396031109
+      "updatedAt": 1770569285111
     }
   ]
 }
