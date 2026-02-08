@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { ScheduleBlock } from './types/schedule';
 import { ScheduleProvider, useScheduleContext } from './contexts/ScheduleContext';
@@ -13,9 +13,7 @@ function TimetableDetail() {
   const navigate = useNavigate();
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -84,63 +82,18 @@ function TimetableDetail() {
     exitEditMode();
   }, [save, exitEditMode]);
 
-  // 정렬된 시간표 목록과 현재 인덱스
+  // 정렬된 시간표 목록
   const sortedSchedules = useMemo(() =>
     [...schedules].sort((a, b) => a.createdAt - b.createdAt),
     [schedules]
   );
 
-  const currentIndex = useMemo(() =>
-    sortedSchedules.findIndex(s => s.id === currentScheduleId),
-    [sortedSchedules, currentScheduleId]
-  );
-
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex < sortedSchedules.length - 1;
-
-  const goToPrev = useCallback(() => {
-    if (hasPrev && !isEditMode) {
-      const prevSchedule = sortedSchedules[currentIndex - 1];
-      selectSchedule(prevSchedule.id);
-      navigate(`/schedule/${prevSchedule.id}`);
-    }
-  }, [hasPrev, isEditMode, sortedSchedules, currentIndex, selectSchedule, navigate]);
-
-  const goToNext = useCallback(() => {
-    if (hasNext && !isEditMode) {
-      const nextSchedule = sortedSchedules[currentIndex + 1];
-      selectSchedule(nextSchedule.id);
-      navigate(`/schedule/${nextSchedule.id}`);
-    }
-  }, [hasNext, isEditMode, sortedSchedules, currentIndex, selectSchedule, navigate]);
-
-  // 모바일 스와이프 처리
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isEditMode) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }, [isEditMode]);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (isEditMode || touchStartX.current === null || touchStartY.current === null) return;
-
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const deltaX = touchEndX - touchStartX.current;
-    const deltaY = touchEndY - touchStartY.current;
-
-    // 수평 스와이프가 수직보다 크고, 최소 50px 이상 이동했을 때
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-      if (deltaX > 0) {
-        goToPrev(); // 오른쪽으로 스와이프 -> 이전
-      } else {
-        goToNext(); // 왼쪽으로 스와이프 -> 다음
-      }
-    }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
-  }, [isEditMode, goToPrev, goToNext]);
+  // 시간표 선택 핸들러
+  const handleSelectSchedule = useCallback((scheduleId: string) => {
+    selectSchedule(scheduleId);
+    navigate(`/schedule/${scheduleId}`);
+    setDrawerOpen(false);
+  }, [selectSchedule, navigate]);
 
   // 로딩 중이거나 초기 로드가 완료되지 않은 경우
   if (isLoading || !initialLoadComplete) {
@@ -178,70 +131,107 @@ function TimetableDetail() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full relative flex justify-center items-center p-2 sm:p-6 bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* PC용 이전 버튼 */}
-      {!isMobile && hasPrev && !isEditMode && (
-        <button
-          onClick={goToPrev}
-          className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-gray-600 hover:text-violet-600 transition-all z-10"
-          title="이전 시간표"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+    <div className="h-full flex bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
+      {/* PC용 좌측 사이드바 */}
+      {!isMobile && (
+        <div className="w-56 h-full flex-shrink-0 bg-white/70 backdrop-blur-sm border-r border-white/50 flex flex-col">
+          <div className="p-4 border-b border-gray-200/50">
+            <h2 className="font-semibold text-gray-700 text-sm">시간표 목록</h2>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            {sortedSchedules.map((schedule) => (
+              <button
+                key={schedule.id}
+                onClick={() => handleSelectSchedule(schedule.id)}
+                className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all text-sm truncate ${
+                  schedule.id === currentScheduleId
+                    ? 'bg-violet-500 text-white shadow-md'
+                    : 'hover:bg-white/80 text-gray-700'
+                }`}
+              >
+                {schedule.title}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      <div className="h-full w-full max-w-5xl flex flex-col bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
-        <Header
-          title={currentSchedule.title}
-          onTitleChange={isEditMode ? setTitle : undefined}
-          hasChanges={hasChanges}
-          onSave={isEditMode ? handleSaveAndExit : undefined}
-          onCancel={isEditMode ? cancelEdit : undefined}
-          onBack={handleBack}
-          isMobile={isMobile}
-          isEditMode={isEditMode}
-          canEdit={canEdit}
-          onEnterEditMode={enterEditMode}
-        />
-
-        <Timetable
-          blocks={currentSchedule.blocks}
-          onAddBlock={isEditMode ? addBlock : undefined}
-          onUpdateBlock={isEditMode ? updateBlock : undefined}
-          onDeleteBlock={isEditMode ? deleteBlock : undefined}
-          onDuplicateBlock={isEditMode ? duplicateBlock : undefined}
-          onEditBlock={isEditMode ? handleEditBlock : undefined}
-          readOnly={!isEditMode}
-        />
-
-        {editingBlock && !isMobile && isEditMode && (
-          <EditModal
-            block={editingBlock}
-            onSave={handleUpdateEditingBlock}
-            onClose={handleCloseModal}
+      {/* 메인 콘텐츠 영역 */}
+      <div className="flex-1 flex justify-center items-center p-2 sm:p-6">
+        <div className="h-full w-full max-w-5xl flex flex-col bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
+          <Header
+            title={currentSchedule.title}
+            onTitleChange={isEditMode ? setTitle : undefined}
+            hasChanges={hasChanges}
+            onSave={isEditMode ? handleSaveAndExit : undefined}
+            onCancel={isEditMode ? cancelEdit : undefined}
+            onBack={handleBack}
             isMobile={isMobile}
+            isEditMode={isEditMode}
+            canEdit={canEdit}
+            onEnterEditMode={enterEditMode}
+            onMenuClick={isMobile ? () => setDrawerOpen(true) : undefined}
           />
-        )}
+
+          <Timetable
+            blocks={currentSchedule.blocks}
+            onAddBlock={isEditMode ? addBlock : undefined}
+            onUpdateBlock={isEditMode ? updateBlock : undefined}
+            onDeleteBlock={isEditMode ? deleteBlock : undefined}
+            onDuplicateBlock={isEditMode ? duplicateBlock : undefined}
+            onEditBlock={isEditMode ? handleEditBlock : undefined}
+            readOnly={!isEditMode}
+          />
+
+          {editingBlock && !isMobile && isEditMode && (
+            <EditModal
+              block={editingBlock}
+              onSave={handleUpdateEditingBlock}
+              onClose={handleCloseModal}
+              isMobile={isMobile}
+            />
+          )}
+        </div>
       </div>
 
-      {/* PC용 다음 버튼 */}
-      {!isMobile && hasNext && !isEditMode && (
-        <button
-          onClick={goToNext}
-          className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-gray-600 hover:text-violet-600 transition-all z-10"
-          title="다음 시간표"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+      {/* 모바일용 Drawer */}
+      {isMobile && drawerOpen && (
+        <>
+          {/* 배경 오버레이 */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setDrawerOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl z-50 flex flex-col animate-slide-in-left">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-700">시간표 목록</h2>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-2">
+              {sortedSchedules.map((schedule) => (
+                <button
+                  key={schedule.id}
+                  onClick={() => handleSelectSchedule(schedule.id)}
+                  className={`w-full text-left px-3 py-3 rounded-lg mb-1 transition-all truncate ${
+                    schedule.id === currentScheduleId
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {schedule.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
