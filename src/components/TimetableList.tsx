@@ -108,13 +108,13 @@ export function TimetableList({ schedules, onSelect, onCreate, onDelete, onCopy,
             <p className="text-sm">새 시간표를 만들어보세요!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col items-center gap-4">
             {schedules
               .sort((a, b) => a.createdAt - b.createdAt)
               .map((schedule) => (
                 <div
                   key={schedule.id}
-                  className="relative bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
+                  className="relative w-full max-w-md bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer overflow-hidden group"
                   onClick={() => onSelect(schedule.id)}
                 >
                   {/* 미리보기 */}

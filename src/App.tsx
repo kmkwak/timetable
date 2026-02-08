@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { HashRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { ScheduleBlock } from './types/schedule';
 import { ScheduleProvider, useScheduleContext } from './contexts/ScheduleContext';
@@ -13,6 +13,9 @@ function TimetableDetail() {
   const navigate = useNavigate();
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -81,6 +84,64 @@ function TimetableDetail() {
     exitEditMode();
   }, [save, exitEditMode]);
 
+  // 정렬된 시간표 목록과 현재 인덱스
+  const sortedSchedules = useMemo(() =>
+    [...schedules].sort((a, b) => a.createdAt - b.createdAt),
+    [schedules]
+  );
+
+  const currentIndex = useMemo(() =>
+    sortedSchedules.findIndex(s => s.id === currentScheduleId),
+    [sortedSchedules, currentScheduleId]
+  );
+
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < sortedSchedules.length - 1;
+
+  const goToPrev = useCallback(() => {
+    if (hasPrev && !isEditMode) {
+      const prevSchedule = sortedSchedules[currentIndex - 1];
+      selectSchedule(prevSchedule.id);
+      navigate(`/schedule/${prevSchedule.id}`);
+    }
+  }, [hasPrev, isEditMode, sortedSchedules, currentIndex, selectSchedule, navigate]);
+
+  const goToNext = useCallback(() => {
+    if (hasNext && !isEditMode) {
+      const nextSchedule = sortedSchedules[currentIndex + 1];
+      selectSchedule(nextSchedule.id);
+      navigate(`/schedule/${nextSchedule.id}`);
+    }
+  }, [hasNext, isEditMode, sortedSchedules, currentIndex, selectSchedule, navigate]);
+
+  // 모바일 스와이프 처리
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isEditMode) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, [isEditMode]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (isEditMode || touchStartX.current === null || touchStartY.current === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchEndX - touchStartX.current;
+    const deltaY = touchEndY - touchStartY.current;
+
+    // 수평 스와이프가 수직보다 크고, 최소 50px 이상 이동했을 때
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      if (deltaX > 0) {
+        goToPrev(); // 오른쪽으로 스와이프 -> 이전
+      } else {
+        goToNext(); // 왼쪽으로 스와이프 -> 다음
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }, [isEditMode, goToPrev, goToNext]);
+
   // 로딩 중이거나 초기 로드가 완료되지 않은 경우
   if (isLoading || !initialLoadComplete) {
     return (
@@ -117,7 +178,25 @@ function TimetableDetail() {
   }
 
   return (
-    <div className="h-full flex justify-center items-center p-2 sm:p-6 bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100">
+    <div
+      ref={containerRef}
+      className="h-full relative flex justify-center items-center p-2 sm:p-6 bg-gradient-to-br from-violet-100 via-pink-50 to-amber-100"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* PC용 이전 버튼 */}
+      {!isMobile && hasPrev && !isEditMode && (
+        <button
+          onClick={goToPrev}
+          className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-gray-600 hover:text-violet-600 transition-all z-10"
+          title="이전 시간표"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+
       <div className="h-full w-full max-w-5xl flex flex-col bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden">
         <Header
           title={currentSchedule.title}
@@ -151,6 +230,19 @@ function TimetableDetail() {
           />
         )}
       </div>
+
+      {/* PC용 다음 버튼 */}
+      {!isMobile && hasNext && !isEditMode && (
+        <button
+          onClick={goToNext}
+          className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow-lg text-gray-600 hover:text-violet-600 transition-all z-10"
+          title="다음 시간표"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
