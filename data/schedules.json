@@ -255,14 +255,14 @@
         {
           "id": "d7197999-a277-4e73-9fef-b79e7fe174fb",
           "title": "미술",
-          "day": 4,
-          "startTime": 880,
-          "endTime": 940,
+          "day": 3,
+          "startTime": 1020,
+          "endTime": 1080,
           "color": "amber"
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770569410795
+      "updatedAt": 1770569414124
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
