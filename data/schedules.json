@@ -190,7 +190,7 @@
         },
         {
           "id": "544a214a-9b01-43e8-9df0-a2952f4715d3",
-          "title": "방과후",
+          "title": "방과후 및 돌봄",
           "day": 0,
           "startTime": 770,
           "endTime": 930,
@@ -254,7 +254,7 @@
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770623528169
+      "updatedAt": 1770623636245
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
