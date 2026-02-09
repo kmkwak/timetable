@@ -232,8 +232,8 @@
           "id": "b571d40d-77e3-49d8-8624-d46ba9444093",
           "title": "피아노",
           "day": 1,
-          "startTime": 960,
-          "endTime": 1020,
+          "startTime": 1030,
+          "endTime": 1090,
           "color": "violet"
         },
         {
@@ -247,14 +247,14 @@
         {
           "id": "d7197999-a277-4e73-9fef-b79e7fe174fb",
           "title": "미술",
-          "day": 3,
-          "startTime": 1020,
-          "endTime": 1080,
+          "day": 1,
+          "startTime": 970,
+          "endTime": 1030,
           "color": "amber"
         }
       ],
       "createdAt": 1770395012681,
-      "updatedAt": 1770623514635
+      "updatedAt": 1770623519252
     },
     {
       "id": "cd009e68-2a61-42a7-b6d3-c9b4acfcbae1",
